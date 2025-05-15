@@ -80,3 +80,60 @@ export const deleteTrip = async (req: Request, res: Response):Promise<void> => {
     res.status(500).json({ message: 'Server error', error: err });
   }
 };
+
+
+export const joinTrip = async (req: Request & { user?: { userId: string } }, res: Response):Promise<void> => {
+  try {
+    const tripId = req.params.id;
+    const userId = req.user?.userId;
+
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      res.status(404).json({ message: 'Trip not found' });
+      return;
+    }
+
+    if (Array.isArray(trip.members) && trip.members.map(m => m.toString()).includes(userId!)) {
+       res.status(400).json({ message: 'User already a member of this trip' });
+       return
+    }
+
+    if (!Array.isArray(trip.members)) {
+      trip.members = [];
+    }
+    trip.members.push(userId!);
+    await trip.save();
+
+    res.status(200).json({ message: 'Joined the trip successfully', trip });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};
+
+
+export const leaveTrip = async (req: Request & { user?: { userId: string } }, res: Response):Promise<void> => {
+  try {
+    const tripId = req.params.id;
+    const userId = req.user?.userId;
+
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      res.status(404).json({ message: 'Trip not found' });
+      return;
+    }
+
+    if (!Array.isArray(trip.members) || !trip.members.map(m => m.toString()).includes(userId!)) {
+      res.status(400).json({ message: 'User is not a member of this trip' });
+      return;
+    }
+
+    trip.members = trip.members.filter(
+      (memberId) => memberId.toString() !== userId
+    );
+    await trip.save();
+
+    res.status(200).json({ message: 'Left the trip successfully', trip });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};
