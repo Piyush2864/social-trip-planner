@@ -10,9 +10,29 @@ const generateToken = (userId: string) => {
   });
 };
 
-export const registerUser = async (req: Request, res: Response): Promise<void> => {
+export const registerUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const { name, email, password, location, number, interests, profilePic } = req.body;
+    const {
+      name,
+      email,
+      password,
+      number,
+      interests,
+      profilePic,
+      coordinates,
+      country,
+      city,
+    } = req.body;
+
+    const location = {
+      type: "Point",
+      coordinates, 
+      country,
+      city,
+    };
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -32,7 +52,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 
     res.status(201).json({
       message: "User registered",
-      newUser
+      newUser,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
@@ -43,7 +63,9 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }) as HydratedDocument<IUser> | null;
+    const user = (await User.findOne({
+      email,
+    })) as HydratedDocument<IUser> | null;
     if (!user) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
