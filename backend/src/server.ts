@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectToDb } from './db/config';
+import userRoutes from './routes/userRoutes';
 
 
 dotenv.config();
@@ -12,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 
 connectToDb();
 
-
+app.use('/api/user', userRoutes);
 
 const PORT = process.env.PORT;
 

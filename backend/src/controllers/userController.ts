@@ -4,20 +4,21 @@ import User from "../models/userModel";
 import { IUser } from "../types/userType";
 import { HydratedDocument } from "mongoose";
 
-
 const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
     expiresIn: "1d",
   });
 };
 
-
-export const registerUser = async (req: Request, res: Response) => {
+export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, location, number, interests, profilePic } = req.body;
 
     const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ message: "User already exists" });
+    if (userExists) {
+      res.status(400).json({ message: "User already exists" });
+      return;
+    }
 
     const newUser = await User.create({
       name,
@@ -38,16 +39,21 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }) as HydratedDocument<IUser> | null;
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+      res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
 
     const token = generateToken((user._id as string).toString());
 
@@ -69,11 +75,16 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-
-export const getUser = async (req: Request & { user?: { userId: string } }, res: Response) => {
+export const getUser = async (
+  req: Request & { user?: { userId: string } },
+  res: Response
+): Promise<void> => {
   try {
     const user = await User.findById(req.user?.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
 
     res.status(200).json({ user });
   } catch (err) {
