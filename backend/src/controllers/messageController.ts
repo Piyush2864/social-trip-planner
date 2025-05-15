@@ -108,7 +108,7 @@ export const deleteMessage = async (
     if (message?.userId.toString() !== userId) {
       res.status(400).json({
         success: false,
-        message: "Message not found",
+        message: "You can delete your own messages",
       });
     }
 
