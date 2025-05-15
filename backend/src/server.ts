@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { connectToDb } from './db/config';
 import userRoutes from './routes/userRoutes';
 import tripRoutes from './routes/tripRoutes';
+import messageRoute from './routes/messageRoutes';
 
 
 dotenv.config();
@@ -16,6 +17,7 @@ connectToDb();
 
 app.use('/api/user', userRoutes);
 app.use('/api/trip', tripRoutes);
+app.use('/api/message', messageRoute);
 
 const PORT = process.env.PORT;
 
