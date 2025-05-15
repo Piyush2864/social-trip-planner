@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import Trip from '../models/tripModel';
 
 
-export const createTrip = async (req: Request, res: Response) => {
+export const createTrip = async (req: Request, res: Response):Promise<void> => {
   try {
     const { title, destination, startDate, endDate, description, members, tags } = req.body;
 
@@ -24,7 +24,7 @@ export const createTrip = async (req: Request, res: Response) => {
 };
 
 
-export const getAllTrips = async (_req: Request, res: Response) => {
+export const getAllTrips = async (_req: Request, res: Response):Promise<void> => {
   try {
     const trips = await Trip.find().populate('creator', 'name email').populate('members', 'name email');
     res.status(200).json({ trips });
