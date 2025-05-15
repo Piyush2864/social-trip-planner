@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { connectToDb } from './db/config';
 import userRoutes from './routes/userRoutes';
+import tripRoutes from './routes/tripRoutes';
 
 
 dotenv.config();
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 connectToDb();
 
 app.use('/api/user', userRoutes);
+app.use('/api/trip', tripRoutes);
 
 const PORT = process.env.PORT;
 

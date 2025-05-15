@@ -34,12 +34,13 @@ export const getAllTrips = async (_req: Request, res: Response) => {
 };
 
 
-export const getTripById = async (req: Request, res: Response) => {
+export const getTripById = async (req: Request, res: Response):Promise<void> => {
   try {
     const trip = await Trip.findById(req.params.id).populate('creator', 'name email').populate('members', 'name email');
 
     if (!trip) {
-      return res.status(404).json({ message: 'Trip not found' });
+       res.status(404).json({ message: 'Trip not found' });
+       return
     }
 
     res.status(200).json({ trip });
@@ -49,12 +50,13 @@ export const getTripById = async (req: Request, res: Response) => {
 };
 
 
-export const updateTrip = async (req: Request, res: Response) => {
+export const updateTrip = async (req: Request, res: Response):Promise<void> => {
   try {
     const trip = await Trip.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
     if (!trip) {
-      return res.status(404).json({ message: 'Trip not found' });
+       res.status(404).json({ message: 'Trip not found' });
+       return
     }
 
     res.status(200).json({ message: 'Trip updated', trip });
@@ -64,12 +66,13 @@ export const updateTrip = async (req: Request, res: Response) => {
 };
 
 
-export const deleteTrip = async (req: Request, res: Response) => {
+export const deleteTrip = async (req: Request, res: Response):Promise<void> => {
   try {
     const trip = await Trip.findByIdAndDelete(req.params.id);
 
     if (!trip) {
-      return res.status(404).json({ message: 'Trip not found' });
+       res.status(404).json({ message: 'Trip not found' });
+       return
     }
 
     res.status(200).json({ message: 'Trip deleted' });
