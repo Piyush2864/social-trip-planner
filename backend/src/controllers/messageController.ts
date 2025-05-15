@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Message from "../models/messageModel";
+import { getIO } from "../utils/socket";
 
 interface MessageRequest extends Request {
   params: {
@@ -34,6 +35,13 @@ export const sendMessage = async (
       tripId,
       userId,
       content,
+    });
+
+    const io = getIO();
+    io.to(tripId).emit('recievemessage', {
+      tripId,
+      userId,
+      content
     });
 
     res.status(201).json({
