@@ -4,11 +4,16 @@ import { connectToDb } from './db/config';
 import userRoutes from './routes/userRoutes';
 import tripRoutes from './routes/tripRoutes';
 import messageRoute from './routes/messageRoutes';
+import http from 'http';
+import { intializeSocket } from './utils/socket';
 
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+intializeSocket(server);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
