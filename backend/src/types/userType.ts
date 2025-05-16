@@ -2,7 +2,7 @@ import type {Document} from 'mongoose';
 
 export interface Location{
     type: string;
-    coordinates: Number;
+    coordinates: Number[];
     country: string;
     city: string;
 };
