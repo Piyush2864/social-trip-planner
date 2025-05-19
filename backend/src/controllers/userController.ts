@@ -4,7 +4,6 @@ import User from "../models/userModel";
 import { IUser } from "../types/userType";
 import { HydratedDocument } from "mongoose";
 import mongoose, { Types } from "mongoose";
- 
 
 const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
@@ -17,11 +16,7 @@ export const registerUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const {
-      name,
-      email,
-      password
-    } = req.body;
+    const { name, email, password } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -122,23 +117,25 @@ export const updateProfile = async (
       city,
     } = req.body;
 
-    if(name) user.name = name;
-    if(password) user.password = password;
+    if (name) user.name = name;
+    if (password) user.password = password;
     if (number) user.number = number;
     if (interests) user.interests = interests;
     if (profilePic) user.profilePic = profilePic;
 
     if (coordinates || country || city) {
-      const currentLocation = Array.isArray(user.location) ? user.location[0] : user.location;
+      const currentLocation = Array.isArray(user.location)
+        ? user.location[0]
+        : user.location;
       user.location = {
         type: "Point",
         coordinates: coordinates || currentLocation?.coordinates,
         country: country || currentLocation?.country,
         city: city || currentLocation?.city,
-      } as any; 
+      } as any;
     }
 
-    if(req.file) {
+    if (req.file) {
       user.profilePic = `/uploads/${req.file.filename}`;
     }
     await user.save();
@@ -160,19 +157,20 @@ export const updateProfile = async (
   }
 };
 
-export const getNearbyTravelers = async(req: Request & { user?: { userId: string } }, res: Response) : Promise<void>=> {
+export const getNearbyTravelers = async (
+  req: Request & { user?: { userId: string } },
+  res: Response
+): Promise<void> => {
   try {
     const currentUser = await User.findById(req.user?.userId);
-    let userLocation = Array.isArray(currentUser?.location) ? currentUser.location[0] : currentUser?.location;
+    let userLocation = Array.isArray(currentUser?.location)
+      ? currentUser.location[0]
+      : currentUser?.location;
 
-    if(
-      !currentUser ||
-      !userLocation ||
-      !userLocation.coordinates
-    ) {
+    if (!currentUser || !userLocation || !userLocation.coordinates) {
       res.status(400).json({
         success: false,
-        message: "User location not found"
+        message: "User location not found",
       });
       return;
     }
@@ -183,39 +181,49 @@ export const getNearbyTravelers = async(req: Request & { user?: { userId: string
     const radiusInMeters = radiusInKm * 1000;
 
     const nearbyUsers = await User.find({
-      _id: { $ne: currentUser._id},
+      _id: { $ne: currentUser._id },
       location: {
         $near: {
           $geometry: {
             type: "Point",
-            coordinates: [lng, lat]
+            coordinates: [lng, lat],
           },
-          $maxDistance: radiusInMeters
-        }
-      }
+          $maxDistance: radiusInMeters,
+        },
+      },
     }).select("-password");
 
     res.status(200).json({
       success: true,
       message: `User within ${radiusInKm}km`,
-      nearbyUsers
+      nearbyUsers,
     });
   } catch (error) {
-     res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Server error",
-      error: error
+      error: error,
     });
   }
-}
+};
 
-export const getInterestBaseUser = async(req: Request, res: Response): Promise<void>=> {
+export const getInterestBaseUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const currentUser = await User.findById(req.user?.userId);
-    if(!currentUser || !currentUser.location || !Array.isArray(currentUser.location) || !currentUser.location[0] || !currentUser.location[0].coordinates || !Array.isArray(currentUser.interests)){
+    if (
+      !currentUser ||
+      !currentUser.location ||
+      !Array.isArray(currentUser.location) ||
+      !currentUser.location[0] ||
+      !currentUser.location[0].coordinates ||
+      !Array.isArray(currentUser.interests)
+    ) {
       res.status(400).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
       return;
     }
@@ -225,8 +233,8 @@ export const getInterestBaseUser = async(req: Request, res: Response): Promise<v
     const radiusInMeters = radiusInKm * 1000;
 
     const matches = await User.find({
-      _id: { $ne: currentUser._id},
-      interests: { $in: currentUser.interests},
+      _id: { $ne: currentUser._id },
+      interests: { $in: currentUser.interests },
       location: {
         $near: {
           $geometry: {
@@ -234,14 +242,14 @@ export const getInterestBaseUser = async(req: Request, res: Response): Promise<v
             coordinates: [lng, lat],
           },
           $maxDistance: radiusInMeters,
-        }
-      }
+        },
+      },
     }).select("-password");
 
     res.status(200).json({
       success: true,
       message: `Found ${matches.length} nearby users with shared interests`,
-      matches
+      matches,
     });
   } catch (error) {
     res.status(500).json({
@@ -250,25 +258,28 @@ export const getInterestBaseUser = async(req: Request, res: Response): Promise<v
       error,
     });
   }
-}
+};
 
-export const sendFriendRequest = async(req: Request , res: Response):Promise<void> => {
+export const sendFriendRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const senderId = req.user?.userId;
-    const receiverId= req.user?.userId;
+    const receiverId = req.user?.userId;
 
-    if(!receiverId) {
+    if (!receiverId) {
       res.status(400).json({
         success: false,
-        message: "Reciever id is required"
+        message: "Reciever id is required",
       });
       return;
     }
 
-    if(senderId === receiverId) {
+    if (senderId === receiverId) {
       res.status(400).json({
         success: false,
-        message: "You cannot send a friend request to yourself"
+        message: "You cannot send a friend request to yourself",
       });
       return;
     }
@@ -276,10 +287,10 @@ export const sendFriendRequest = async(req: Request , res: Response):Promise<voi
     const sender = await User.findById(senderId);
     const receiver = await User.findById(receiverId);
 
-    if(!sender || !receiver) {
+    if (!sender || !receiver) {
       res.status(404).json({
         success: false,
-        message:"User not found"
+        message: "User not found",
       });
       return;
     }
@@ -291,7 +302,7 @@ export const sendFriendRequest = async(req: Request , res: Response):Promise<voi
     ) {
       res.status(400).json({
         success: false,
-        message: "Friend request already sent or user already connected"
+        message: "Friend request already sent or user already connected",
       });
       return;
     }
@@ -303,7 +314,92 @@ export const sendFriendRequest = async(req: Request , res: Response):Promise<voi
     await receiver.save();
 
     res.status(200).json({
-      message: "Friend request sent successfully"
+      message: "Friend request sent successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const acceptFriendRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const receiverId = req.user?.userId;
+    const senderId = req.params.id;
+
+    const receiver = await User.findById(receiverId);
+    const sender = await User.findById(senderId);
+
+    if (!receiver || !sender) {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (
+      !sender ||
+      !receiver?.friendRequests.includes(sender._id as Types.ObjectId)
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "No friend request from this user",
+      });
+    }
+
+    receiver?.friends.push(sender?._id as Types.ObjectId);
+    sender?.friends.push(receiver?._id as Types.ObjectId);
+
+
+    if (receiver) {
+      receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== (sender?._id as Types.ObjectId).toString());
+    }
+    
+    if (sender) {
+      sender.sendRequests = sender.sendRequests.filter(id => id.toString() !== (receiver?._id as Types.ObjectId).toString());
+    }
+
+    await receiver?.save();
+    await sender?.save();
+
+    res.status(200).json({
+      message: "Friend request accepted"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const rejectFriendRequest = async(req: Request, res: Response):Promise<void> => {
+  try {
+    const receiverId = req.user?.userId;
+    const senderId = req.params.id;
+
+    const receiver = await User.findById(receiverId);
+    const sender = await User.findById(senderId);
+
+    if(!receiver || !sender) {
+      res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if(receiver && sender) {
+      receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== (sender._id as Types.ObjectId).toString());
+    };
+
+    if(sender && receiver) {
+      sender.sendRequests = sender.sendRequests.filter(id => id.toString() !== (receiver._id as Types.ObjectId).toString());
+    };
+
+    await receiver?.save();
+    await sender?.save();
+
+    res.status(200).json({
+      message: "Friend request rejected"
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
