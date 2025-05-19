@@ -53,6 +53,24 @@ const userSchema = new Schema<IUser>(
     profilePic: {
       type: String,
     },
+    friendRequests: [
+      {
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"User"
+      }
+    ],
+    sendRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ],
+    friends:[
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
   },
   { timestamps: true }
 );

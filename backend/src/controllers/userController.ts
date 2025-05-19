@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/userModel";
 import { IUser } from "../types/userType";
 import { HydratedDocument } from "mongoose";
+import mongoose, { Types } from "mongoose";
+ 
 
 const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
@@ -247,5 +249,63 @@ export const getInterestBaseUser = async(req: Request, res: Response): Promise<v
       message: "Server error",
       error,
     });
+  }
+}
+
+export const sendFriendRequest = async(req: Request , res: Response):Promise<void> => {
+  try {
+    const senderId = req.user?.userId;
+    const receiverId= req.user?.userId;
+
+    if(!receiverId) {
+      res.status(400).json({
+        success: false,
+        message: "Reciever id is required"
+      });
+      return;
+    }
+
+    if(senderId === receiverId) {
+      res.status(400).json({
+        success: false,
+        message: "You cannot send a friend request to yourself"
+      });
+      return;
+    }
+
+    const sender = await User.findById(senderId);
+    const receiver = await User.findById(receiverId);
+
+    if(!sender || !receiver) {
+      res.status(404).json({
+        success: false,
+        message:"User not found"
+      });
+      return;
+    }
+
+    if (
+      sender.friends.includes(receiver._id as Types.ObjectId) ||
+      sender.sendRequests.includes(receiver._id as Types.ObjectId) ||
+      sender.friendRequests.includes(receiver._id as Types.ObjectId)
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Friend request already sent or user already connected"
+      });
+      return;
+    }
+
+    sender.sendRequests.push(receiver._id as Types.ObjectId);
+    receiver.friendRequests.push(sender._id as Types.ObjectId);
+
+    await sender.save();
+    await receiver.save();
+
+    res.status(200).json({
+      message: "Friend request sent successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
   }
 }
