@@ -97,7 +97,6 @@ export const getUser = async (
   }
 };
 
-
 export const updateProfile = async (
   req: Request & { user?: { userId: string } },
   res: Response
@@ -111,6 +110,7 @@ export const updateProfile = async (
     }
 
     const {
+      name,
       password,
       number,
       interests,
@@ -120,6 +120,7 @@ export const updateProfile = async (
       city,
     } = req.body;
 
+    if(name) user.name = name;
     if(password) user.password = password;
     if (number) user.number = number;
     if (interests) user.interests = interests;
@@ -135,6 +136,9 @@ export const updateProfile = async (
       } as any; 
     }
 
+    if(req.file) {
+      user.profilePic = `/uploads/${req.file.filename}`;
+    }
     await user.save();
 
     res.status(200).json({
@@ -153,7 +157,6 @@ export const updateProfile = async (
     res.status(500).json({ message: "Server error", error: err });
   }
 };
-
 
 export const getNearbyTravelers = async(req: Request & { user?: { userId: string } }, res: Response) : Promise<void>=> {
   try {
@@ -200,6 +203,49 @@ export const getNearbyTravelers = async(req: Request & { user?: { userId: string
       success: false,
       message: "Server error",
       error: error
+    });
+  }
+}
+
+export const getInterestBaseUser = async(req: Request, res: Response): Promise<void>=> {
+  try {
+    const currentUser = await User.findById(req.user?.userId);
+    if(!currentUser || !currentUser.location || !Array.isArray(currentUser.location) || !currentUser.location[0] || !currentUser.location[0].coordinates || !Array.isArray(currentUser.interests)){
+      res.status(400).json({
+        success: false,
+        message: "User not found"
+      });
+      return;
+    }
+
+    const [lng, lat] = currentUser.location[0].coordinates;
+    const radiusInKm = Number(req.query.radius) || 10;
+    const radiusInMeters = radiusInKm * 1000;
+
+    const matches = await User.find({
+      _id: { $ne: currentUser._id},
+      interests: { $in: currentUser.interests},
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          $maxDistance: radiusInMeters,
+        }
+      }
+    }).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: `Found ${matches.length} nearby users with shared interests`,
+      matches
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error,
     });
   }
 }

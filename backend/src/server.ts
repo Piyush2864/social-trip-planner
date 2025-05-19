@@ -6,6 +6,7 @@ import tripRoutes from './routes/tripRoutes';
 import messageRoute from './routes/messageRoutes';
 import http from 'http';
 import { intializeSocket } from './utils/socket';
+import path from 'path';
 
 
 dotenv.config();
@@ -16,6 +17,7 @@ const server = http.createServer(app);
 intializeSocket(server);
 
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, "../uploads")));
 app.use(express.urlencoded({ extended: true }));
 
 connectToDb();
