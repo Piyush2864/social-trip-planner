@@ -352,27 +352,33 @@ export const acceptFriendRequest = async (
     receiver?.friends.push(sender?._id as Types.ObjectId);
     sender?.friends.push(receiver?._id as Types.ObjectId);
 
-
     if (receiver) {
-      receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== (sender?._id as Types.ObjectId).toString());
+      receiver.friendRequests = receiver.friendRequests.filter(
+        (id) => id.toString() !== (sender?._id as Types.ObjectId).toString()
+      );
     }
-    
+
     if (sender) {
-      sender.sendRequests = sender.sendRequests.filter(id => id.toString() !== (receiver?._id as Types.ObjectId).toString());
+      sender.sendRequests = sender.sendRequests.filter(
+        (id) => id.toString() !== (receiver?._id as Types.ObjectId).toString()
+      );
     }
 
     await receiver?.save();
     await sender?.save();
 
     res.status(200).json({
-      message: "Friend request accepted"
+      message: "Friend request accepted",
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-export const rejectFriendRequest = async(req: Request, res: Response):Promise<void> => {
+export const rejectFriendRequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const receiverId = req.user?.userId;
     const senderId = req.params.id;
@@ -380,28 +386,82 @@ export const rejectFriendRequest = async(req: Request, res: Response):Promise<vo
     const receiver = await User.findById(receiverId);
     const sender = await User.findById(senderId);
 
-    if(!receiver || !sender) {
+    if (!receiver || !sender) {
       res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
-    if(receiver && sender) {
-      receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== (sender._id as Types.ObjectId).toString());
-    };
+    if (receiver && sender) {
+      receiver.friendRequests = receiver.friendRequests.filter(
+        (id) => id.toString() !== (sender._id as Types.ObjectId).toString()
+      );
+    }
 
-    if(sender && receiver) {
-      sender.sendRequests = sender.sendRequests.filter(id => id.toString() !== (receiver._id as Types.ObjectId).toString());
-    };
+    if (sender && receiver) {
+      sender.sendRequests = sender.sendRequests.filter(
+        (id) => id.toString() !== (receiver._id as Types.ObjectId).toString()
+      );
+    }
 
     await receiver?.save();
     await sender?.save();
 
     res.status(200).json({
-      message: "Friend request rejected"
+      message: "Friend request rejected",
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
-}
+};
+
+export const getFriendRequests = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = await User.findById(req.user?.userId).populate(
+      "friendRequests",
+      "name email profilePic"
+    );
+
+    if (!user) {
+      res.status(404).json({
+        message: "user not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Friend requests fetched successfully",
+      friendRequests: user?.friendRequests,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const getFriendList = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = await User.findById(req.user?.userId).populate(
+      "friends",
+      "name email profilePic"
+    );
+
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Friends list fetched successfully",
+      friends: user?.friends,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
