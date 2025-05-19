@@ -1,45 +1,63 @@
-import mongoose, { Schema } from 'mongoose';
-import { Trip } from '../types/tripType';
+import mongoose, { Schema } from "mongoose";
+import { Trip } from "../types/tripType";
 
-
-const tripSchema = new Schema<Trip>({
+const tripSchema = new Schema<Trip>(
+  {
     title: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
 
     destination: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
 
     startDate: {
-        type: Date,
+      type: Date,
     },
 
     endDate: {
-        type: Date
+      type: Date,
     },
 
     description: {
-        type: String
+      type: String,
     },
 
     creator: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
 
-    members: [{
+    members: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    }],
-    
-    tags: {
-        type: [String]
-    }
-}, {timestamps: true});
+        ref: "User",
+      },
+    ],
 
-const Trip = mongoose.model('Trip', tripSchema);
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    joinRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    tags: {
+      type: [String],
+    },
+  },
+  { timestamps: true }
+);
+
+const Trip = mongoose.model("Trip", tripSchema);
 
 export default Trip;

@@ -9,6 +9,8 @@ export interface Trip extends Document {
     endDate: Date;
     description: string;
     creator?: mongoose.Types.ObjectId | string;
-    members:  mongoose.Types.ObjectId |string[];
+    members: mongoose.Types.ObjectId |string[];
+    participants: mongoose.Types.ObjectId |string[];
+    joinRequests: mongoose.Types.ObjectId |string[];
     tags: string[];
 }
