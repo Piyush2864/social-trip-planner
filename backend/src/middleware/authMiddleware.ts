@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 interface AuthRequest extends Request {
-  user?: { userId: string };
+  user?: { userId: string; role?: string };
 }
 
 const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): void => {
@@ -16,10 +16,10 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): vo
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string; role?: string };
 
     // Attach decoded token data to req.user
-    req.user = { userId: decoded.userId };
+    req.user = { userId: decoded.userId, role: decoded.role };
 
     next();
   } catch (err) {
@@ -28,3 +28,13 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): vo
 };
 
 export default authMiddleware;
+
+
+export const isAdmin = (req: AuthRequest, res: Response , next: NextFunction)=> {
+  if(req.user?.role !== 'admin'){
+    return res.status(403).json({
+      message: "Admin access required"
+    });
+  }
+  next();
+}
