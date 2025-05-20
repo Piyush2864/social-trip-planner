@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Message from "../models/messageModel";
 import { getIO } from "../utils/socket";
+import Trip from "../models/tripModel";
 
 interface MessageRequest extends Request {
   params: {
@@ -10,7 +11,7 @@ interface MessageRequest extends Request {
     userId: string;
   };
   body: {
-    content: string;
+    message: string;
   };
 }
 
@@ -19,11 +20,11 @@ export const sendMessage = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { content } = req.body;
+    const {message} = req.body;
     const { tripId } = req.params;
     const userId = req.user?.userId;
 
-    if (!content || !userId) {
+    if (!message || message.trim() || !userId) {
       res.status(400).json({
         success: false,
         message: "Content and userId are required",
@@ -31,23 +32,38 @@ export const sendMessage = async (
       return;
     }
 
-    const message = await Message.create({
+    const trip = await Trip.findById(tripId);
+    if(!trip) {
+      res.status(404).json({
+        message:"Trip not found"
+      });
+    }
+
+    const isParticipant = Array.isArray(trip?.members) && trip.members.some(memberId => memberId.toString() === userId);
+    if(!isParticipant) {
+      res.status(403).json({
+        message: "You are not a member of this group"
+      });
+      return;
+    }
+
+    const chatMessage = await Message.create({
       tripId,
       userId,
-      content,
+      message,
     });
 
     const io = getIO();
     io.to(tripId).emit('recievemessage', {
       tripId,
       userId,
-      content
+      message
     });
 
     res.status(201).json({
       success: true,
       message: "Message sent successfully",
-      data: message,
+      data: chatMessage,
     });
   } catch (error) {
     res.status(500).json({
@@ -64,6 +80,8 @@ export const getMessage = async (
 ): Promise<void> => {
   try {
     const { tripId } = req.params;
+    const userId = req.user?.userId;
+
     if (!tripId) {
       res.status(400).json({
         success: false,
@@ -71,8 +89,23 @@ export const getMessage = async (
       });
     }
 
+    const trip = await Trip.findById(tripId);
+    if(!trip) {
+      res.status(404).json({
+        message: "Trip not found"
+      });
+    }
+
+    const isParticipant = Array.isArray(trip?.members) && trip.members.some(memberId => memberId.toString() === userId);
+
+    if(!isParticipant) {
+      res.status(403).json({
+        message: "You are not a member of this trip"
+      });
+    }
+
     const message = await Message.find({ tripId })
-      .populate("userId", "name email profilePic")
+      .populate("userId", "name profilePic")
       .sort({ createdAt: 1 });
 
     if (!message) {
@@ -116,7 +149,7 @@ export const deleteMessage = async (
     if (message?.userId.toString() !== userId) {
       res.status(400).json({
         success: false,
-        message: "You can delete your own messages",
+        message: "You can only delete your own messages",
       });
     }
 
