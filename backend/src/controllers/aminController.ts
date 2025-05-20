@@ -77,8 +77,70 @@ export const getTripsByUserId = async (req: Request, res: Response) => {
       trips,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error });
+    res.status(500).json({ message: "Server error", error: error });
+  }
+};
+
+export const searchTrips = async (req: Request, res: Response) => {
+  try {
+    const { keyword, userId, city, country, page=1, limit=10, sortBy='createdAt', order= 'desc' } = req.query;
+
+    const filter: any = {};
+
+    if (keyword) {
+      filter.$or = [
+        {
+          title: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    if (userId) {
+      filter.creator = userId;
+    }
+
+    if (city || country) {
+      filter["location.city"] = city;
+      filter["location.country"] = country;
+    }
+
+    const skip = (Number(page) -1) * Number(limit);
+    const sortOrder = order === 'asc' ? 1 : -1;
+
+    const trips = await Trip.find(filter)
+    .sort({ [ sortBy as string]: sortOrder})
+    .skip(skip)
+    .limit(Number(limit))
+    .populate("creator", "name email");
+
+    const total = await Trip.countDocuments(filter);
+
+    if (!trips) {
+      return res.status(404).json({
+        message: "Trips not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Trips fetched successfully",
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+      trips,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error,
+    });
   }
 };
