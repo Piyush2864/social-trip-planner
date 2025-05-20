@@ -142,9 +142,9 @@ export const joinTrip = async (
 export const leaveTrip = async (
   req: Request & { user?: { userId: string } },
   res: Response
-): Promise<void> => {
+) => {
   try {
-    const tripId = req.params.id;
+    const { tripId } = req.params;
     const userId = req.user?.userId;
 
     const trip = await Trip.findById(tripId);
@@ -153,17 +153,18 @@ export const leaveTrip = async (
       return;
     }
 
-    if (
-      !Array.isArray(trip.members) ||
-      !trip.members.map((m) => m.toString()).includes(userId!)
-    ) {
-      res.status(400).json({ message: "User is not a member of this trip" });
-      return;
+    if(!Array.isArray(trip.participants)) {
+      trip.participants = [];
     }
 
-    trip.members = trip.members.filter(
-      (memberId) => memberId.toString() !== userId
-    );
+    const leaveTrip = trip.participants.indexOf(userId!);
+    if (leaveTrip === -1) {
+      res.status(400).json({
+        message: "You are not a participant of this trip",
+      });
+    }
+
+    trip.participants.splice(leaveTrip, 1);
     await trip.save();
 
     res.status(200).json({ message: "Left the trip successfully", trip });
@@ -316,3 +317,48 @@ export const rejectJoinRequest = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+export const removePrticipant = async(req: Request, res: Response)=> {
+  try {
+    const {tripId} = req.params;
+    const {userIdToRemove} = req.body;
+    const userId = req.user?.userId;
+
+    const trip = await Trip.findById(tripId);
+
+    if(!trip) {
+      return res.status(404).json({
+        message: "Trip not found"
+      });
+    }
+
+    if(trip.creator?.toString !== userId) {
+      return res.status(403).json({
+        message: "Only the creator can remove the participants"
+      });
+    }
+
+    if(!Array.isArray(trip.participants)) {
+      trip.participants = [];
+    }
+
+    const removePrticipant = trip.participants.indexOf(userIdToRemove);
+
+    if(removePrticipant === -1) {
+      return res.status(400).json({
+        message: "User is not a participant"
+      });
+    }
+
+    trip.participants.splice(removePrticipant, 1);
+
+    await trip.save();
+
+    res.status(200).json({
+      message: "Participant remove from trip"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+}
