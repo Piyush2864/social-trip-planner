@@ -13,7 +13,7 @@ const messageSchema = new Schema<Message>({
         ref: "User"
     },
 
-    content: {
+    message: {
         type: String
     },
 }, {timestamps: true});
