@@ -220,6 +220,98 @@ export const sendJoinRequest = async (
 
       await trip.save();
     }
+    res.status(200).json({
+      message: "Join request sent successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const acceptJoinRequest = async (req: Request, res: Response) => {
+  try {
+    const { tripId } = req.params;
+    const { useridToAccept } = req.body;
+    const userId = req.user?.userId;
+
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res.status(404).json({
+        message: "Trip not found",
+      });
+    }
+
+    if (trip.creator?.toString() !== userId) {
+      return res.status(403).json({
+        message: "Only creator accept the request",
+      });
+    }
+
+    if (!Array.isArray(trip.joinRequests)) {
+      trip.joinRequests = [];
+    }
+    const request = trip.joinRequests.indexOf(useridToAccept);
+    if (request === -1) {
+      return res.status(400).json({
+        message: "No such join request",
+      });
+    }
+
+    trip.joinRequests.splice(request, 1);
+    if (trip) {
+      if (!Array.isArray(trip.participants)) {
+        trip.participants = [];
+      }
+      trip.participants.push(useridToAccept);
+      await trip.save();
+    }
+    res.status(200).json({
+      messsasge: "Join request accepted",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const rejectJoinRequest = async (req: Request, res: Response) => {
+  try {
+    const { tripId } = req.params;
+    const userId = req.user?.userId;
+    const { userIdToReject } = req.body;
+
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res.status(404).json({
+        message: "Trip not found",
+      });
+    }
+
+    if (trip.creator?.toString() !== userId) {
+      return res.status(403).json({
+        message: "Only the creator can reject the request",
+      });
+    }
+
+    if (!Array.isArray(trip.joinRequests)) {
+      trip.joinRequests = [];
+    }
+
+    const request = trip.joinRequests.indexOf(userIdToReject);
+    if (request === -1) {
+      return res.status(400).json({
+        message: "No such join request",
+      });
+    }
+
+    trip.joinRequests.splice(request, 1);
+
+    await trip.save();
+
+    return res.status(200).json({
+      message: "Join request rejected",
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
