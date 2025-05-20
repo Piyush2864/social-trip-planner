@@ -99,6 +99,14 @@ export const deleteTrip = async (
       return;
     }
 
+    if(trip.creator?.toString() !== req.user?.userId){
+      res.status(403).json({
+        message: "Only the creator can delete this trip"
+      });
+    }
+
+    await trip.deleteOne();
+    
     res.status(200).json({ message: "Trip deleted" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
