@@ -18,6 +18,23 @@ export const intializeSocket = (server: HTTPServer) => {
             console.log(`Socket ${socket.id} joined trip ${tripId}`);
         });
 
+        socket.on('sendTripmessage', ({ tripId, senderId, text}) => {
+            const message = {
+                tripId,
+                senderId,
+                text,
+                timeStamp: new Date()
+            };
+
+            socket.to(tripId).emit('receiverTripMessage', message);
+
+            socket.emit('messageSent', message);
+        })
+
+        socket.on('typing', (tripId) => {
+            socket.to(tripId).emit('userTyping', {userId: socket.id});
+        })
+
         socket.on('disconnect', () => {
             console.log(`User disconnected: ${socket.id}`);
         });

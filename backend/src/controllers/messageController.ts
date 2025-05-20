@@ -15,56 +15,67 @@ interface MessageRequest extends Request {
   };
 }
 
-export const sendMessage = async (
-  req: MessageRequest,
-  res: Response
-): Promise<void> => {
+export const sendMessage = async (req: MessageRequest, res: Response): Promise<void> => {
   try {
-    const {message} = req.body;
+    const { message } = req.body;
     const { tripId } = req.params;
     const userId = req.user?.userId;
 
-    if (!message || message.trim() || !userId) {
+    
+    if (!message || !message.trim() || !userId) {
       res.status(400).json({
         success: false,
-        message: "Content and userId are required",
+        message: "Message content and user authentication are required",
       });
       return;
     }
 
+    
     const trip = await Trip.findById(tripId);
-    if(!trip) {
+    if (!trip) {
       res.status(404).json({
-        message:"Trip not found"
-      });
-    }
-
-    const isParticipant = Array.isArray(trip?.members) && trip.members.some(memberId => memberId.toString() === userId);
-    if(!isParticipant) {
-      res.status(403).json({
-        message: "You are not a member of this group"
+        success: false,
+        message: "Trip not found",
       });
       return;
     }
 
+    
+    const isParticipant = Array.isArray(trip.members) &&
+      trip.members.some(memberId => memberId.toString() === userId);
+
+    if (!isParticipant) {
+      res.status(403).json({
+        success: false,
+        message: "You are not a member of this trip",
+      });
+      return;
+    }
+
+    
     const chatMessage = await Message.create({
       tripId,
       userId,
-      message,
+      message: message.trim(),
     });
 
+    
     const io = getIO();
-    io.to(tripId).emit('recievemessage', {
+    io.to(tripId).emit('receiveMessage', {
+      _id: chatMessage._id,
       tripId,
       userId,
-      message
+      message: chatMessage.message,
+      createdAt: chatMessage.get('createdAt'),
     });
 
+    
     res.status(201).json({
       success: true,
       message: "Message sent successfully",
       data: chatMessage,
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
