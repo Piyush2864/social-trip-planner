@@ -30,9 +30,9 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): vo
 export default authMiddleware;
 
 
-export const isAdmin = (req: AuthRequest, res: Response , next: NextFunction)=> {
+export const isAdmin = (req: AuthRequest, res: Response , next: NextFunction): void=> {
   if(req.user?.role !== 'admin'){
-    return res.status(403).json({
+     res.status(403).json({
       message: "Admin access required"
     });
   }
